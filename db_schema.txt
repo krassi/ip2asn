@@ -1,0 +1,112 @@
+
+CREATE DATABASE ip2asn;
+GRANT ALL ON ip2asn.* TO 'ip2asn_admin'@'localhost' WITH GRANT OPTION;
+GRANT SELECT, INSERT ON ip2asn.Datasets TO 'ip2asn_rw'@'localhost';
+GRANT SELECT, INSERT ON ip2asn.Summaries TO 'ip2asn_rw'@'localhost';
+GRANT SELECT ON ip2asn.Registries TO 'ip2asn_rw'@'localhost';
+
+GRANT SELECT, INSERT ON ip2asn.Records_ipv4 TO 'ip2asn_rw'@'localhost';
+GRANT SELECT, INSERT ON ip2asn.Records_asn TO 'ip2asn_rw'@'localhost';
+GRANT SELECT, INSERT ON ip2asn.Records_ipv6 TO 'ip2asn_rw'@'localhost';
+
+CREATE USER 'ip2asn_admin'@'localhost' IDENTIFIED BY '';
+CREATE USER 'ip2asn_ro'@'localhost' IDENTIFIED BY '';
+CREATE USER 'ip2asn_rw'@'localhost' IDENTIFIED BY '';
+
+
+CREATE TABLE Registries (
+ID SMALLINT AUTO_INCREMENT NOT NULL,
+ShortName CHAR(10) NOT NULL, 
+LongName CHAR(65) NOT NULL,
+LatestDataSetLocation CHAR(250) NOT NULL,
+BaseDirDataSetLocation CHAR(250) NOT NULL,
+UNIQUE( ShortName),
+PRIMARY KEY (ID));
+
+
+INSERT INTO Registries VALUES (1, "afrinic", "African Network Information Center (AFRINIC)", "http://ftp.afrinic.net/pub/stats/afrinic/delegated-afrinic-latest", "http://ftp.afrinic.net/pub/stats/afrinic/");
+INSERT INTO Registries VALUES (2, "apnic", "Asia-Pacific Network Information Centre (APNIC)", "http://ftp.apnic.net/stats/apnic/delegated-apnic-latest", "http://ftp.apnic.net/stats/apnic/");
+INSERT INTO Registries VALUES (3, "arin", "American Registry for Internet Numbers (ARIN)", "http://ftp.arin.net/pub/stats/arin/delegated-arin-extended-latest", "http://ftp.arin.net/pub/stats/arin/");
+INSERT INTO Registries VALUES (4, "lacnic", "Latin America and Caribbean Network Information Centre (LACNIC)", "http://ftp.lacnic.net/pub/stats/lacnic/delegated-lacnic-latest", "http://ftp.lacnic.net/pub/stats/lacnic/");
+INSERT INTO Registries VALUES (5, "ripencc", "Réseaux IP Européens Network Coordination Centre (RIPE NCC)", "http://ftp.arin.net/pub/stats/ripencc/delegated-ripencc-latest", "http://ftp.arin.net/pub/stats/ripencc/");
+
+
+CREATE TABLE Datasets(
+ID SMALLINT AUTO_INCREMENT NOT NULL, 
+ID_Registries ENUM('afrinic', 'apnic', 'arin', 'lacnic', 'ripencc') NOT NULL,
+serial BIGINT UNSIGNED NOT NULL,
+version CHAR(5) NOT NULL,
+records MEDIUMINT UNSIGNED NOT NULL,
+startdate DATE,
+enddate DATE,
+UTCoffset TINYINT NOT NULL,
+PRIMARY KEY (ID),
+UNIQUE(ID_Registries,serial)
+);
+
+
+# Serial number and Registry are taken from table Datasets
+# TimeInserted should be set to the time of the Dataset file
+
+CREATE TABLE Summaries(
+ID INT AUTO_INCREMENT NOT NULL, 
+ID_Datasets SMALLINT NOT NULL,
+RecordType ENUM('ipv4','asn','ipv6') NOT NULL,
+Count MEDIUMINT UNSIGNED NOT NULL,
+TimeInserted DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+PRIMARY KEY (ID),
+UNIQUE(ID_Datasets,RecordType)
+);
+
+
+# TimeInserted should be set to the time of the Dataset file
+# RecData and TimeInserted will probably be the same for each record. TO DO: verify
+CREATE TABLE Records_ipv4(
+ID INT UNSIGNED AUTO_INCREMENT NOT NULL, 
+ID_Datasets SMALLINT UNSIGNED NOT NULL,
+ID_Registries ENUM('afrinic', 'apnic', 'arin', 'lacnic', 'ripencc') NOT NULL,
+CC CHAR(2) NOT NULL,
+FirstIP INT UNSIGNED NOT NULL,
+HostCount INT UNSIGNED NOT NULL,
+RecordDate DATE,
+State ENUM('available', 'allocated', 'assigned', 'reserved') NOT NULL,
+OpaqueID VARCHAR(255),
+Extensions VARCHAR(255),
+TimeInserted DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+PRIMARY KEY (ID),
+UNIQUE(ID_Registries, CC, FirstIP, HostCount, RecordDate, State)
+);
+
+CREATE TABLE Records_ipv6(
+ID INT UNSIGNED AUTO_INCREMENT NOT NULL, 
+ID_Datasets SMALLINT UNSIGNED NOT NULL,
+ID_Registries ENUM('afrinic', 'apnic', 'arin', 'lacnic', 'ripencc') NOT NULL,
+CC CHAR(2) NOT NULL,
+FirstIP BINARY(16) NOT NULL,
+PrefixLen TINYINT UNSIGNED NOT NULL,
+RecordDate DATE,
+State ENUM('available', 'allocated', 'assigned', 'reserved') NOT NULL,
+OpaqueID VARCHAR(255),
+Extensions VARCHAR(255),
+TimeInserted DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+PRIMARY KEY (ID),
+UNIQUE(ID_Registries, CC, FirstIP, PrefixLen, RecordDate, State)
+);
+
+
+CREATE TABLE Records_asn(
+ID INT UNSIGNED AUTO_INCREMENT NOT NULL, 
+ID_Datasets SMALLINT UNSIGNED NOT NULL,
+ID_Registries ENUM('afrinic', 'apnic', 'arin', 'lacnic', 'ripencc') NOT NULL,
+CC CHAR(2) NOT NULL,
+ASN INT UNSIGNED NOT NULL,
+ASNCount SMALLINT UNSIGNED NOT NULL,
+RecordDate DATE,
+State ENUM('available', 'allocated', 'assigned', 'reserved') NOT NULL,
+OpaqueID VARCHAR(255),
+Extensions VARCHAR(255),
+TimeInserted DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+PRIMARY KEY (ID),
+UNIQUE(ID_Registries, CC, ASN, ASNCount, RecordDate, State)
+);
+
