@@ -1,18 +1,6 @@
 
 CREATE DATABASE ip2asn;
-GRANT ALL ON ip2asn.* TO 'ip2asn_admin'@'localhost' WITH GRANT OPTION;
-GRANT SELECT, INSERT ON ip2asn.Datasets TO 'ip2asn_rw'@'localhost';
-GRANT SELECT, INSERT ON ip2asn.Summaries TO 'ip2asn_rw'@'localhost';
-GRANT SELECT ON ip2asn.Registries TO 'ip2asn_rw'@'localhost';
-
-GRANT SELECT, INSERT ON ip2asn.Records_ipv4 TO 'ip2asn_rw'@'localhost';
-GRANT SELECT, INSERT ON ip2asn.Records_asn TO 'ip2asn_rw'@'localhost';
-GRANT SELECT, INSERT ON ip2asn.Records_ipv6 TO 'ip2asn_rw'@'localhost';
-
-CREATE USER 'ip2asn_admin'@'localhost' IDENTIFIED BY '';
-CREATE USER 'ip2asn_ro'@'localhost' IDENTIFIED BY '';
-CREATE USER 'ip2asn_rw'@'localhost' IDENTIFIED BY '';
-
+USE ip2asn;
 
 CREATE TABLE Registries (
 ID SMALLINT AUTO_INCREMENT NOT NULL,
@@ -47,7 +35,6 @@ UNIQUE(ID_Registries,serial)
 
 # Serial number and Registry are taken from table Datasets
 # TimeInserted should be set to the time of the Dataset file
-
 CREATE TABLE Summaries(
 ID INT AUTO_INCREMENT NOT NULL, 
 ID_Datasets SMALLINT NOT NULL,
@@ -77,6 +64,7 @@ PRIMARY KEY (ID),
 UNIQUE(ID_Registries, CC, FirstIP, HostCount, RecordDate, State)
 );
 
+
 CREATE TABLE Records_ipv6(
 ID INT UNSIGNED AUTO_INCREMENT NOT NULL, 
 ID_Datasets SMALLINT UNSIGNED NOT NULL,
@@ -93,7 +81,6 @@ PRIMARY KEY (ID),
 UNIQUE(ID_Registries, CC, FirstIP, PrefixLen, RecordDate, State)
 );
 
-
 CREATE TABLE Records_asn(
 ID INT UNSIGNED AUTO_INCREMENT NOT NULL, 
 ID_Datasets SMALLINT UNSIGNED NOT NULL,
@@ -109,4 +96,21 @@ TimeInserted DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
 PRIMARY KEY (ID),
 UNIQUE(ID_Registries, CC, ASN, ASNCount, RecordDate, State)
 );
+
+
+CREATE USER 'ip2asn_admin'@'localhost' IDENTIFIED BY '';
+CREATE USER 'ip2asn_ro'@'localhost' IDENTIFIED BY '';
+CREATE USER 'ip2asn_rw'@'localhost' IDENTIFIED BY '';
+
+GRANT ALL ON ip2asn.* TO 'ip2asn_admin'@'localhost' WITH GRANT OPTION;
+GRANT SELECT, INSERT ON ip2asn.Datasets TO 'ip2asn_rw'@'localhost';
+GRANT SELECT, INSERT ON ip2asn.Summaries TO 'ip2asn_rw'@'localhost';
+GRANT SELECT ON ip2asn.Registries TO 'ip2asn_rw'@'localhost';
+
+GRANT SELECT, INSERT ON ip2asn.Records_ipv4 TO 'ip2asn_rw'@'localhost';
+GRANT SELECT, INSERT ON ip2asn.Records_asn TO 'ip2asn_rw'@'localhost';
+GRANT SELECT, INSERT ON ip2asn.Records_ipv6 TO 'ip2asn_rw'@'localhost';
+
+
+
 
