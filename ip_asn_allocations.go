@@ -12,7 +12,6 @@ import (
 	"os"
 	"regexp"
 	"strconv"
-	"time"
 
 	"github.com/go-sql-driver/mysql"
 	_ "github.com/go-sql-driver/mysql"
@@ -44,8 +43,6 @@ func parseVersionLine(hdr *FileHeader, line string) bool {
 			log.Fatal("Invalid file header and -invalid-header-ok not specified")
 		}
 		verbosePrint(2, "Warning: date file header missing or corrupt; ignoring due to -invalid-header-ok=true\n")
-		t := time.Now()
-		hdr.enddate = t.Format("20060102")
 		return false
 	}
 
@@ -120,7 +117,7 @@ func saveHeaderData(db *sql.DB, hdr FileHeader) int64 {
 	}
 
 	for k := range summaries {
-		res, err = db.Exec("INSERT INTO Summaries VALUES( DEFAULT, ?, ?, ?, ?)", lastID, k, summaries[k], hdr.enddate)
+		res, err = db.Exec("INSERT INTO Summaries VALUES( DEFAULT, ?, ?, ?)", lastID, k, summaries[k])
 		if err != nil {
 			verbosePrint(2, fmt.Sprintf("Warning: cannot record summary value for %s: %s\n", k, err.Error()))
 		}
@@ -160,7 +157,7 @@ func parseData(db *sql.DB, data []byte) { // r io.Reader
 	parseHeader(scanner, &hdr)
 	lastID = saveHeaderData(db, hdr)
 
-	queryTempl := "INSERT INTO %s VALUES ( DEFAULT, %d, ?, ?, %s, ?, ?, ?, ?, ?, %s)"
+	queryTempl := "INSERT INTO %s VALUES ( DEFAULT, %d, ?, ?, %s, ?, ?, ?, ?, ?)"
 	var ipv4Query, asnQuery, ipv6Query sql.Stmt
 
 	recordTypes := map[string]*sql.Stmt{
@@ -178,9 +175,9 @@ func parseData(db *sql.DB, data []byte) { // r io.Reader
 		if k == "ipv6" {
 			conversion = "INET6_ATON(?)"
 		}
-		stmt, err := db.Prepare(fmt.Sprintf(queryTempl, "Records_"+string(k), lastID, conversion, hdr.enddate))
+		stmt, err := db.Prepare(fmt.Sprintf(queryTempl, "Records_"+string(k), lastID, conversion))
 		recordTypes[k] = stmt
-		verbosePrint(3, fmt.Sprintf("DEBUG: Query: "+string(queryTempl)+"\n", "Records_"+string(k), lastID, conversion, hdr.enddate))
+		verbosePrint(3, fmt.Sprintf("DEBUG: Query: "+string(queryTempl)+"\n", "Records_"+string(k), lastID, conversion))
 
 		if err != nil {
 			fmt.Printf("Warning: prepare query for %s: %s\n", k, err.Error())

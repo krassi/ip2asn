@@ -40,7 +40,6 @@ ID INT AUTO_INCREMENT NOT NULL,
 ID_Datasets SMALLINT NOT NULL,
 RecordType ENUM('ipv4','asn','ipv6') NOT NULL,
 Count MEDIUMINT UNSIGNED NOT NULL,
-TimeInserted DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
 PRIMARY KEY (ID),
 UNIQUE(ID_Datasets,RecordType)
 );
@@ -59,7 +58,6 @@ RecordDate DATE,
 State ENUM('available', 'allocated', 'assigned', 'reserved') NOT NULL,
 OpaqueID VARCHAR(255),
 Extensions VARCHAR(255),
-TimeInserted DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
 PRIMARY KEY (ID),
 UNIQUE(ID_Registries, CC, FirstIP, HostCount, RecordDate, State)
 );
@@ -76,7 +74,6 @@ RecordDate DATE,
 State ENUM('available', 'allocated', 'assigned', 'reserved') NOT NULL,
 OpaqueID VARCHAR(255),
 Extensions VARCHAR(255),
-TimeInserted DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
 PRIMARY KEY (ID),
 UNIQUE(ID_Registries, CC, FirstIP, PrefixLen, RecordDate, State)
 );
@@ -92,7 +89,6 @@ RecordDate DATE,
 State ENUM('available', 'allocated', 'assigned', 'reserved') NOT NULL,
 OpaqueID VARCHAR(255),
 Extensions VARCHAR(255),
-TimeInserted DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
 PRIMARY KEY (ID),
 UNIQUE(ID_Registries, CC, ASN, ASNCount, RecordDate, State)
 );
