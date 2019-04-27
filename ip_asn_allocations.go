@@ -12,6 +12,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"time"
 
 	"github.com/go-sql-driver/mysql"
 	_ "github.com/go-sql-driver/mysql"
@@ -43,6 +44,8 @@ func parseVersionLine(hdr *FileHeader, line string) bool {
 			log.Fatal("Invalid file header and -invalid-header-ok not specified")
 		}
 		verbosePrint(2, "Warning: date file header missing or corrupt; ignoring due to -invalid-header-ok=true\n")
+		t := time.Now()
+		hdr.enddate = t.Format("20060102")
 		return false
 	}
 
@@ -97,7 +100,6 @@ func saveHeaderData(db *sql.DB, hdr FileHeader) int64 {
 
 	if err == nil { // Error may be caused by duplicated unique indexes so attempt to do a select query to see if there is a match
 		lastID, err = res.LastInsertId()
-		//raf, err := res.RowsAffected()
 	} else {
 		driverErr, _ := err.(*mysql.MySQLError)
 		if driverErr.Number == 1062 && *f_force { // Duplicate entry and force enable; continuing
@@ -135,7 +137,7 @@ func parseHeader(scanner *bufio.Scanner, hdr *FileHeader) {
 
 	// Skip all comments
 	for line[0] == '#' || line[0] == '\r' { // APNIC has a bunch of comments in the file before the header starts so skip them
-		fmt.Println(line)
+		verbosePrint(4, line)
 		scanner.Scan()
 		line = scanner.Text()
 	}
@@ -186,13 +188,7 @@ func parseData(db *sql.DB, data []byte) { // r io.Reader
 		defer recordTypes[k].Close()
 	}
 
-	// NOTE: It is not possible to start parsing records until the header is parsed because he "insertion date" is taken from the header
-	// Read records
 	verbosePrint(2, "Processing records.\n")
-	//var counter int64
-	//"ipv4": &ipv4Query,
-	//"asn":  &asnQuery,
-	//"ipv6": &ipv6Query,
 
 	var counter = map[string]uint64{
 		"ipv4":    0,
@@ -264,8 +260,9 @@ func main() {
 	db := setupDB()
 	defer db.Close()
 
+	// Determine data source
 	switch *f_source {
-	case "file":
+	case "file": // Single file with RIR data
 		verbosePrint(1, fmt.Sprintf("Reading from: %s\n", *f_inputFileName))
 		data, err := ioutil.ReadFile(*f_inputFileName)
 		if err != nil {
@@ -286,11 +283,10 @@ func main() {
 	case "ripencc":
 		*f_URL = getRegistryURL(db, *f_source)
 		fallthrough
-	case "download":
+	case "download": // Download the data from a specific URL
 		data := downloadFile(f_URL)
-		//parseData(db, bytes.NewReader(data))
 		parseData(db, data)
-	case "all":
+	case "all": // Iterate through all RIRs based on URLs from the Registires table
 		registries := []string{"afrinic", "apnic", "arin", "lacnic", "ripencc"}
 		for _, reg := range registries {
 			fmt.Println("Processing: " + reg)
@@ -302,7 +298,6 @@ func main() {
 	default:
 		log.Fatal("Invalid source type: " + *f_source)
 	}
-
 }
 
 func getRegistryURL(db *sql.DB, registry string) string {
